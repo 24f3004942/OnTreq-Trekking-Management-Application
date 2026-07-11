@@ -1,22 +1,30 @@
 import os
 from flask import Flask
 from flask_cors import CORS
-from models import db, User, StaffProfile
+from flask_jwt_extended import JWTManager
+from models import db, User, StaffProfile, Trek, Booking, TrekReview
 
 def create_app():
     app = Flask(__name__)
-    
-    # Allow frontend to communicate with backend
     CORS(app)
     
-    # Configure SQLite Database (MAD-2 requirement)
+    # Configure SQLite Database
     basedir = os.path.abspath(os.path.dirname(__file__))
-    # This places the database file in the 'instance' folder at the root
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, '..', 'instance', 'database.sqlite')
+    instance_path = os.path.join(basedir, '..', 'instance')
+    os.makedirs(instance_path, exist_ok=True)
+    
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(instance_path, 'database.sqlite')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
-    # Initialize the app with the database
+    # Configure JWT for Authentication
+    app.config['JWT_SECRET_KEY'] = 'ontreq-super-secret-key-4942' # Security key for generating tokens
+    jwt = JWTManager(app)
+    
     db.init_app(app)
+    
+    # Register Blueprints
+    from routes.auth import auth_bp
+    app.register_blueprint(auth_bp, url_prefix='/api/auth')
     
     return app
 
