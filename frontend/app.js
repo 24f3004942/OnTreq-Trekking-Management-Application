@@ -53,7 +53,16 @@ createApp({
                     this.successMessage = 'Login successful! Redirecting...';
                     
                     // In the future, we will redirect to the specific dashboard here
-                    console.log("Logged in as:", data.role);
+                    // Redirect based on the user's role
+                    setTimeout(() => {
+                        if (data.role === 'admin') {
+                            window.location.href = 'admin_dashboard.html';
+                        } else if (data.role === 'staff') {
+                            window.location.href = 'staff_dashboard.html';
+                        } else {
+                            window.location.href = 'user_dashboard.html';
+                        }
+                    }, 1000); // 1 second delay so they can read the success message
                 } else {
                     this.successMessage = 'Registration successful! You can now log in.';
                     setTimeout(() => this.toggleMode(), 2000); // Switch to login after 2 seconds

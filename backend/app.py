@@ -18,13 +18,27 @@ def create_app():
     
     # Configure JWT for Authentication
     app.config['JWT_SECRET_KEY'] = 'ontreq-super-secret-key-4942' # Security key for generating tokens
+    from datetime import timedelta
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=1)
     jwt = JWTManager(app)
+
+    
     
     db.init_app(app)
     
     # Register Blueprints
     from routes.auth import auth_bp
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
+
+    from routes.admin import admin_bp
+    app.register_blueprint(admin_bp, url_prefix='/api/admin')
+
+    from routes.trek import trek_bp
+    app.register_blueprint(trek_bp, url_prefix='/api/treks')
+
+    # Add this new Staff Blueprint
+    from routes.staff import staff_bp
+    app.register_blueprint(staff_bp, url_prefix='/api/staff')
     
     return app
 

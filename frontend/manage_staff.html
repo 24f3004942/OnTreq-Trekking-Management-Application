@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OnTreq | Manage Staff</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="static/style.css">
+</head>
+<body class="dashboard-body">
+
+    <div id="manage-staff-app" v-cloak>
+        
+        <nav class="sidebar d-flex flex-column p-4">
+            <h2 class="fw-bolder mb-5 text-white">On<span style="color: var(--ontreq-accent);">Treq</span></h2>
+            <div class="flex-grow-1">
+                <p class="text-secondary small fw-bold mb-2 px-2">MAIN MENU</p>
+                <a href="admin_dashboard.html" :class="['nav-link-custom', { active: window.location.pathname.includes('admin_dashboard') }]"><i class="bi bi-grid-1x2"></i> Command Center</a>
+                <a href="manage_treks.html" :class="['nav-link-custom', { active: window.location.pathname.includes('manage_treks') }]"><i class="bi bi-map"></i> Manage Treks</a>
+                <a href="manage_staff.html" :class="['nav-link-custom', { active: window.location.pathname.includes('manage_staff') }]"><i class="bi bi-person-badge"></i> Trek Staff</a>
+                <a href="manage_users.html" :class="['nav-link-custom', { active: window.location.pathname.includes('manage_users') }]"><i class="bi bi-people"></i> Trekkers</a>
+                <a href="admin_bookings.html" :class="['nav-link-custom', { active: window.location.pathname.includes('admin_bookings') }]"><i class="bi bi-journal-check"></i> Bookings</a>
+                
+                <p class="text-secondary small fw-bold mb-2 mt-4 px-2">SYSTEM</p>
+                <a href="admin_reports.html" :class="['nav-link-custom', { active: window.location.pathname.includes('admin_reports') }]"><i class="bi bi-bar-chart-line"></i> Reports & Analytics</a>
+                <a href="#" class="nav-link-custom"><i class="bi bi-gear"></i> Settings</a>
+            </div>
+            <button @click="logout" class="btn btn-outline-danger w-100 mt-auto">
+                <i class="bi bi-box-arrow-left"></i> Secure Logout
+            </button>
+        </nav>
+
+        <main class="main-content">
+            <header class="mb-5">
+                <h3 class="fw-bold m-0">Staff Operations</h3>
+                <p class="text-secondary m-0">Recruit guides and manage system access.</p>
+            </header>
+
+            <div v-if="message" :class="['alert', isError ? 'alert-danger' : 'alert-success', 'py-2', 'mb-4']">
+                {{ message }}
+            </div>
+
+            <div class="glass-card p-4 mb-5">
+                <h5 class="fw-bold mb-4">Recruit New Guide</h5>
+                <form @submit.prevent="submitForm">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-secondary small fw-bold">Full Name</label>
+                            <input type="text" class="form-control" v-model="form.name" required placeholder="e.g. Tenzing Norgay">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-secondary small fw-bold">Contact Number</label>
+                            <input type="text" class="form-control" v-model="form.contact" required placeholder="+1 (555) 000-0000">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-secondary small fw-bold">System Email (Login)</label>
+                            <input type="email" class="form-control" v-model="form.email" required placeholder="guide@ontreq.com">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-secondary small fw-bold">Initial Password</label>
+                            <input type="password" class="form-control" v-model="form.password" required minlength="6" placeholder="Assign secure password">
+                        </div>
+                    </div>
+                    <div class="mt-4 text-end">
+                        <button type="submit" class="btn btn-brand px-5" :disabled="isLoading">
+                            {{ isLoading ? 'Processing...' : 'Create Staff Account' }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="glass-card p-4">
+                <h5 class="fw-bold mb-4">Active Roster</h5>
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover align-middle mb-0" style="background-color: transparent;">
+                        <thead>
+                            <tr class="text-secondary small">
+                                <th>GUIDE NAME</th>
+                                <th>EMAIL</th>
+                                <th>CONTACT</th>
+                                <th>JOINED</th>
+                                <th>STATUS</th>
+                                <th class="text-end">ACTIONS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-if="staffList.length === 0">
+                                <td colspan="6" class="text-center text-secondary py-4">No staff members recruited yet.</td>
+                            </tr>
+                            <tr v-for="staff in staffList" :key="staff.id">
+                                <td class="fw-bold text-white">{{ staff.name }}</td>
+                                <td>{{ staff.email }}</td>
+                                <td>{{ staff.contact }}</td>
+                                <td>{{ staff.joined }}</td>
+                                <td>
+                                    <span class="badge" :class="staff.is_active ? 'bg-success' : 'bg-danger'">
+                                        {{ staff.is_active ? 'Active' : 'Suspended' }}
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <button @click="removeStaff(staff.id)" class="btn btn-sm btn-outline-danger" title="Revoke Access">
+                                        <i class="bi bi-person-x"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="manage_staff.js"></script>
+</body>
+</html>

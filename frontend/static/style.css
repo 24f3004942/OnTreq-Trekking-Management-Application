@@ -1,15 +1,26 @@
 /* Custom OnTreq Branding */
+/* Import Google Fonts for that premium Flyward look */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;600&display=swap');
+
+/* Custom OnTreq Branding */
 :root {
-    --ontreq-accent: #ff4757; /* A bold, high-energy accent color */
-    --ontreq-bg: #0f1115; /* Deep, sleek dark background */
+    --ontreq-accent: hsl(0, 80%, 53%); 
+    --ontreq-bg: #0f1115; 
+    --font-heading: 'Playfair Display', serif; /* Elegant Flyward-style font */
+    --font-body: 'Inter', sans-serif;
 }
 
 body {
     background-color: var(--ontreq-bg);
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: var(--font-body);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+}
+
+h1, h2, h3, h4, h5, .brand-text {
+    font-family: var(--font-heading);
+    letter-spacing: 1px;
 }
 
 .hero-section {
@@ -52,4 +63,75 @@ body {
 .form-control:focus {
     box-shadow: 0 0 0 0.25rem rgba(255, 71, 87, 0.25) !important;
     border-color: var(--ontreq-accent) !important;
+}
+
+/* --- PREMIUM DASHBOARD LAYOUT --- */
+.dashboard-body {
+    background-color: var(--ontreq-bg);
+    overflow-x: hidden;
+}
+
+.sidebar {
+    width: 280px;
+    height: 100vh;
+    position: fixed;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(15, 17, 21, 0.8);
+    backdrop-filter: blur(20px);
+    z-index: 1000;
+}
+
+.main-content {
+    margin-left: 280px;
+    min-height: 100vh;
+    padding: 2rem;
+    background: radial-gradient(circle at top right, rgba(255, 71, 87, 0.05), transparent 50%);
+}
+
+.nav-link-custom {
+    color: #8b949e;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 0.5rem;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+}
+
+.nav-link-custom:hover, .nav-link-custom.active {
+    background: rgba(255, 71, 87, 0.1);
+    color: var(--ontreq-accent);
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(255, 71, 87, 0.3);
+    box-shadow: 0 10px 30px -10px rgba(255, 71, 87, 0.1);
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    background: rgba(255, 71, 87, 0.1);
+    color: var(--ontreq-accent);
+}
+
+/* Hide Vue templates until Vue is fully loaded */
+[v-cloak] {
+    display: none !important;
 }

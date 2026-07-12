@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OnTreq | Admin Command Center</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="static/style.css">
+</head>
+<body class="dashboard-body">
+
+    <div id="admin-app" v-cloak>
+        <nav class="sidebar d-flex flex-column p-4">
+            <h2 class="fw-bolder mb-5 text-white">On<span style="color: var(--ontreq-accent);">Treq</span></h2>
+            
+            <div class="flex-grow-1">
+                <p class="text-secondary small fw-bold mb-2 px-2">MAIN MENU</p>
+                <a href="admin_dashboard.html" :class="['nav-link-custom', { active: window.location.pathname.includes('admin_dashboard') }]"><i class="bi bi-grid-1x2"></i> Command Center</a>
+                <a href="manage_treks.html" :class="['nav-link-custom', { active: window.location.pathname.includes('manage_treks') }]"><i class="bi bi-map"></i> Manage Treks</a>
+                <a href="manage_staff.html" :class="['nav-link-custom', { active: window.location.pathname.includes('manage_staff') }]"><i class="bi bi-person-badge"></i> Trek Staff</a>
+                <a href="manage_users.html" :class="['nav-link-custom', { active: window.location.pathname.includes('manage_users') }]"><i class="bi bi-people"></i> Trekkers</a>
+                <a href="admin_bookings.html" :class="['nav-link-custom', { active: window.location.pathname.includes('admin_bookings') }]"><i class="bi bi-journal-check"></i> Bookings</a>
+                
+                <p class="text-secondary small fw-bold mb-2 mt-4 px-2">SYSTEM</p>
+                <a href="admin_reports.html" :class="['nav-link-custom', { active: window.location.pathname.includes('admin_reports') }]"><i class="bi bi-bar-chart-line"></i> Reports & Analytics</a>
+                <a href="#" class="nav-link-custom"><i class="bi bi-gear"></i> Settings</a>
+            </div>
+
+            <button @click="logout" class="btn btn-outline-danger w-100 mt-auto">
+                <i class="bi bi-box-arrow-left"></i> Secure Logout
+            </button>
+        </nav>
+
+        <main class="main-content">
+            <header class="d-flex justify-content-between align-items-center mb-5">
+                <div>
+                    <h3 class="fw-bold m-0">System Overview</h3>
+                    <p class="text-secondary m-0">Real-time metrics for your adventure operations.</p>
+                </div>
+                <div class="glass-card px-4 py-2 rounded-pill d-flex align-items-center gap-2">
+                    <div class="spinner-grow spinner-grow-sm text-success" role="status"></div>
+                    <span class="small text-secondary fw-bold">SYSTEM ONLINE</span>
+                </div>
+            </header>
+
+            <div class="row g-4 mb-5">
+                <div class="col-md-6 col-xl-3">
+                    <div class="stat-card">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <p class="text-secondary small fw-bold mb-1">TOTAL TREKS</p>
+                                <h2 class="fw-bold m-0">{{ stats.treks || 0 }}</h2>
+                            </div>
+                            <div class="stat-icon"><i class="bi bi-geo-alt"></i></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-xl-3">
+                    <div class="stat-card">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <p class="text-secondary small fw-bold mb-1">ACTIVE TREKKERS</p>
+                                <h2 class="fw-bold m-0">{{ stats.users || 0 }}</h2>
+                            </div>
+                            <div class="stat-icon"><i class="bi bi-person"></i></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-xl-3">
+                    <div class="stat-card">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <p class="text-secondary small fw-bold mb-1">TREK STAFF</p>
+                                <h2 class="fw-bold m-0">{{ stats.staff || 0 }}</h2>
+                            </div>
+                            <div class="stat-icon"><i class="bi bi-shield-check"></i></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-xl-3">
+                    <div class="stat-card">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <p class="text-secondary small fw-bold mb-1">TOTAL BOOKINGS</p>
+                                <h2 class="fw-bold m-0">{{ stats.bookings || 0 }}</h2>
+                            </div>
+                            <div class="stat-icon"><i class="bi bi-calendar2-check"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card p-4">
+                <h5 class="fw-bold mb-4">Recent System Activity</h5>
+                <p class="text-secondary">Data streams will appear here once endpoints are connected.</p>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>
