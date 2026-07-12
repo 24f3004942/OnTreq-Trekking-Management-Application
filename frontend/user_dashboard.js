@@ -12,7 +12,8 @@ createApp({
             isError: false,
             isLoading: false,
             currentTab: 'browse',
-            profileForm: { email: '', password: '' }
+            profileForm: { email: '', password: '' },
+            exportStatus: ''
         }
     },
     computed: {
@@ -59,6 +60,49 @@ createApp({
         });
     },
     methods: {
+        async startExport() {
+            this.exportStatus = 'Initializing secure export...';
+            try {
+                const response = await fetch('http://127.0.0.1:5000/api/user-ops/export', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    this.pollExportStatus(data.task_id); // Start tracking it!
+                } else {
+                    this.exportStatus = 'Failed to start export.';
+                }
+            } catch (error) {
+                this.exportStatus = 'Network error.';
+            }
+        },
+        
+        async pollExportStatus(taskId) {
+            // Check the status every 1.5 seconds
+            const interval = setInterval(async () => {
+                const res = await fetch(`http://127.0.0.1:5000/api/user-ops/export/status/${taskId}`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                const data = await res.json();
+                this.exportStatus = data.msg; // Update UI with current status
+                
+                if (data.state === 'SUCCESS') {
+                    clearInterval(interval);
+                    this.exportStatus = 'Download starting...';
+                    
+                    // Force the browser to download the file
+                    window.location.href = `http://127.0.0.1:5000/api/user-ops/export/download/${data.filename}`;
+                    
+                    // Clear the message after a few seconds
+                    setTimeout(() => { this.exportStatus = ''; }, 3000);
+                } else if (data.state === 'FAILURE') {
+                    clearInterval(interval);
+                }
+            }, 1500);
+        },
+
         getTrekImage(id) {
             const premiumImages = [
                 'https://images.unsplash.com/photo-1522163182402-834f871fd851?auto=format&fit=crop&w=800&q=80',

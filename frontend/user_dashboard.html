@@ -237,7 +237,16 @@
             </div>
 
             <div v-show="currentTab === 'history'" style="padding-top: 120px; min-height: 80vh;">
-                <h2 class="flyward-title mb-5" style="font-size: 3.5rem;">My Expeditions</h2>
+                <div class="d-flex justify-content-between align-items-end mb-5">
+                    <h2 class="flyward-title m-0" style="font-size: 3.5rem;">My Expeditions</h2>
+                    
+                    <div class="text-end">
+                        <span v-if="exportStatus" class="text-secondary small me-3 fw-bold animate-pulse">{{ exportStatus }}</span>
+                        <button @click="startExport" class="btn btn-outline-secondary rounded-0 px-4 py-2 text-uppercase" style="letter-spacing: 1px;" :disabled="exportStatus !== ''">
+                            <i class="bi bi-filetype-csv me-2"></i> Export History
+                        </button>
+                    </div>
+                </div>
                 
                 <div class="table-responsive reveal-up border border-secondary p-2 bg-dark bg-opacity-25">
                     <table class="table table-dark table-hover align-middle m-0" style="background-color: transparent;">

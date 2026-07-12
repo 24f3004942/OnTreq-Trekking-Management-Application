@@ -4,6 +4,10 @@ from models import db, Trek, User, Booking
 from datetime import datetime
 from werkzeug.security import generate_password_hash
 
+from celery.result import AsyncResult
+from flask import send_file
+import os
+
 user_ops_bp = Blueprint('user_ops', __name__)
 
 def is_trekker(user_id):
@@ -113,3 +117,42 @@ def update_profile():
     except Exception as e:
         db.session.rollback()
         return jsonify({"msg": "Failed to update profile."}), 500
+    
+
+# --- 4. Trigger Async CSV Export (Milestone 7) ---
+@user_ops_bp.route('/export', methods=['POST'])
+@jwt_required()
+def trigger_export():
+    from jobs.tasks import export_booking_history
+
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+    
+    # Dispatch the job to the Celery queue
+    task = export_booking_history.delay(current_user_id, user.email)
+    
+    # Respond instantly with the task tracking ID
+    return jsonify({"msg": "Export job initialized.", "task_id": task.id}), 202
+
+# --- 5. Check Async Job Status ---
+@user_ops_bp.route('/export/status/<task_id>', methods=['GET'])
+@jwt_required()
+def check_export_status(task_id):
+    task = AsyncResult(task_id)
+    
+    if task.state == 'PENDING' or task.state == 'STARTED':
+        return jsonify({"state": task.state, "msg": "Processing data in background..."}), 200
+    elif task.state == 'SUCCESS':
+        return jsonify({"state": task.state, "msg": "Export complete!", "filename": task.result['file']}), 200
+    else:
+        return jsonify({"state": task.state, "msg": "Export failed."}), 500
+
+# --- 6. Download the CSV File ---
+@user_ops_bp.route('/export/download/<filename>', methods=['GET'])
+def download_export(filename):
+    # Locate the file in the 'exports' folder
+    filepath = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'exports', filename))
+    try:
+        return send_file(filepath, as_attachment=True)
+    except Exception as e:
+        return jsonify({"msg": "File not found on server."}), 404
