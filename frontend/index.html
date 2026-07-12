@@ -8,6 +8,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     
     <link rel="stylesheet" href="static/style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#FF4757">
 </head>
 <body>
 
@@ -60,5 +62,22 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="app.js"></script>
 
+    <script>
+        // 1. PWA Registration
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+        
+        // 2. Public Pre-Login Stats (Milestone 10 Requirement)
+        fetch('http://127.0.0.1:5000/api/treks/')
+            .then(res => res.json())
+            .then(data => {
+                const openTreks = data.filter(t => t.status === 'Open').length;
+                const statsDiv = document.createElement('div');
+                statsDiv.className = "text-center mt-5 text-secondary small reveal-up is-visible";
+                statsDiv.innerHTML = `<i class="bi bi-activity text-success"></i> System Online: <strong>${openTreks}</strong> active expeditions currently accepting bookings.`;
+                document.querySelector('.auth-card').after(statsDiv);
+            });
+    </script>
 </body>
 </html>

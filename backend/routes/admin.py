@@ -75,3 +75,26 @@ def get_all_bookings():
         })
         
     return jsonify(booking_list), 200
+
+from models import Trek, Booking, User, StaffProfile
+from sqlalchemy import func
+
+@admin_bp.route('/analytics', methods=['GET'])
+@jwt_required()
+def get_chart_analytics():
+    """Provides data for Chart.js dashboard"""
+    # 1. Participation by Difficulty
+    easy = Trek.query.filter_by(difficulty='Easy').count()
+    mod = Trek.query.filter_by(difficulty='Moderate').count()
+    hard = Trek.query.filter_by(difficulty='Hard').count()
+    extreme = Trek.query.filter_by(difficulty='Extreme').count()
+    
+    # 2. Status Breakdown
+    booked = Booking.query.filter_by(status='Booked').count()
+    cancelled = Booking.query.filter_by(status='Cancelled').count()
+    completed = Booking.query.filter_by(status='Completed').count()
+    
+    return jsonify({
+        "difficulty_chart": [easy, mod, hard, extreme],
+        "booking_status_chart": [booked, cancelled, completed]
+    }), 200

@@ -1,0 +1,16 @@
+{
+  "name": "OnTreq Expeditions",
+  "short_name": "OnTreq",
+  "description": "Premium Trekking Management",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#08090a",
+  "theme_color": "#FF4757",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3273/3273892.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
