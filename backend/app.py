@@ -17,7 +17,7 @@ def create_app():
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
     # Configure JWT for Authentication
-    app.config['JWT_SECRET_KEY'] = 'ontreq-super-secret-key-4942' # Security key for generating tokens
+    app.config['JWT_SECRET_KEY'] = 'ontreq-super-secret-key-4942-secure' # Security key for generating tokens
     from datetime import timedelta
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=1)
     jwt = JWTManager(app)
@@ -39,6 +39,10 @@ def create_app():
     # Add this new Staff Blueprint
     from routes.staff import staff_bp
     app.register_blueprint(staff_bp, url_prefix='/api/staff')
+
+    # Add this new Staff Operations Blueprint
+    from routes.staff_ops import staff_ops_bp
+    app.register_blueprint(staff_ops_bp, url_prefix='/api/staff-ops')
     
     return app
 
