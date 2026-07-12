@@ -43,6 +43,10 @@ def create_app():
     # Add this new Staff Operations Blueprint
     from routes.staff_ops import staff_ops_bp
     app.register_blueprint(staff_ops_bp, url_prefix='/api/staff-ops')
+
+    # Add the User (Trekker) Operations Blueprint
+    from routes.user_ops import user_ops_bp
+    app.register_blueprint(user_ops_bp, url_prefix='/api/user-ops')
     
     return app
 

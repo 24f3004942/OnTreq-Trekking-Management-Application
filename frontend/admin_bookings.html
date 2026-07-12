@@ -67,12 +67,17 @@
                                 </td>
                             </tr>
                             
-                            <tr v-for="booking in bookings" :key="booking.id">
+                            <!-- Future data loop -->
+                            <tr v-for="booking in filteredBookings" :key="booking.id">
                                 <td class="fw-bold text-white">#{{ booking.id }}</td>
                                 <td>{{ booking.user_email }}</td>
                                 <td>{{ booking.trek_name }}</td>
                                 <td>{{ booking.date }}</td>
-                                <td><span class="badge bg-primary">{{ booking.status }}</span></td>
+                                <td>
+                                    <span class="badge" :class="booking.status === 'Booked' ? 'bg-success' : 'bg-secondary'">
+                                        {{ booking.status }}
+                                    </span>
+                                </td>
                             </tr>
                         </tbody>
                     </table>

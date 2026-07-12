@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OnTreq | Expeditions</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="static/style.css">
+    
+    <style>
+        .user-body { background-color: #08090a; }
+        
+        .hero-cinematic {
+            position: relative;
+            height: 80vh;
+            background: url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2400&auto=format&fit=crop') center 30% / cover no-repeat;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        
+        .hero-mask {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(to bottom, rgba(8,9,10,0.3) 0%, rgba(8,9,10,0.8) 70%, #08090a 100%);
+            z-index: 1;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            padding-top: 5rem;
+        }
+
+        .flyward-title {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(3rem, 6vw, 6.5rem);
+            font-weight: 400;
+            letter-spacing: 2px;
+            color: #ffffff;
+            text-transform: uppercase;
+            text-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            line-height: 1.1;
+        }
+
+        .flyward-subtitle {
+            font-family: 'Inter', sans-serif;
+            font-size: 1.1rem;
+            color: #a1a1aa;
+            letter-spacing: 1px;
+            max-width: 600px;
+            margin: 1.5rem auto 0;
+        }
+
+        .user-nav {
+            background: rgba(8, 9, 10, 0.7);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            position: fixed;
+            width: 100%;
+            z-index: 1000;
+            top: 0;
+        }
+
+        .trek-card {
+            background: #111216;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 2px;
+            transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+            overflow: hidden;
+        }
+        
+        .trek-card:hover {
+            border-color: rgba(255, 71, 87, 0.4);
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+        }
+
+        .trek-image-wrapper {
+            position: relative;
+            height: 260px;
+            overflow: hidden;
+        }
+
+        .trek-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.8s ease;
+        }
+
+        .trek-card:hover .trek-image {
+            transform: scale(1.08); 
+        }
+
+        .trek-badge {
+            position: absolute;
+            top: 1.5rem;
+            left: 1.5rem;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .trek-title { 
+            font-family: 'Playfair Display', serif; 
+            font-size: 2rem; 
+            line-height: 1.2;
+        }
+        
+        .filter-bar {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 1.5rem;
+            border-radius: 4px;
+        }
+
+        /* Scroll Animations */
+        .reveal-up {
+            opacity: 0;
+            transform: translateY(60px);
+            transition: opacity 0.8s ease-out, transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+            will-change: opacity, transform;
+        }
+        
+        .reveal-up.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .delay-1 { transition-delay: 0.1s; }
+        .delay-2 { transition-delay: 0.2s; }
+        .delay-3 { transition-delay: 0.3s; }
+    </style>
+</head>
+<body class="user-body">
+
+    <div id="user-app" v-cloak>
+        
+        <nav class="user-nav py-3">
+            <div class="container d-flex justify-content-between align-items-center">
+                <h4 class="fw-bolder m-0 text-white" style="letter-spacing: 1px;">On<span style="color: var(--ontreq-accent);">Treq</span></h4>
+                <div>
+                    <button @click="currentTab = 'browse'" :class="['btn btn-link text-decoration-none me-4 text-uppercase small', currentTab === 'browse' ? 'text-white fw-bold' : 'text-secondary']" style="letter-spacing: 1px;">Discover</button>
+                    <button @click="currentTab = 'history'" :class="['btn btn-link text-decoration-none me-4 text-uppercase small', currentTab === 'history' ? 'text-white fw-bold' : 'text-secondary']" style="letter-spacing: 1px;">My Bookings</button>
+                    <button @click="currentTab = 'profile'" :class="['btn btn-link text-decoration-none me-5 text-uppercase small', currentTab === 'profile' ? 'text-white fw-bold' : 'text-secondary']" style="letter-spacing: 1px;">Profile</button>
+                    <button @click="logout" class="btn btn-outline-secondary btn-sm rounded-0 px-4 text-uppercase" style="letter-spacing: 1px;">Sign Out</button>
+                </div>
+            </div>
+        </nav>
+
+        <section class="hero-cinematic" v-show="currentTab === 'browse'">
+            <div class="hero-mask"></div>
+            <div class="hero-content container">
+                <h1 class="flyward-title">Experience You<br>Can Rely On</h1>
+                <p class="flyward-subtitle">From frequent weekend trails to once-in-a-lifetime summits, OnTreq operates as an extension of your adventurous spirit.</p>
+            </div>
+        </section>
+
+        <main class="container" style="position: relative; z-index: 5; padding-bottom: 5rem;" :style="{ marginTop: currentTab === 'browse' ? '-4rem' : '0' }">
+            
+            <div v-show="currentTab === 'browse'">
+                <div class="filter-bar reveal-up mb-5 d-flex gap-4 flex-wrap align-items-end shadow-lg backdrop-blur">
+                    <div class="flex-grow-1 min-w-200">
+                        <label class="small text-secondary fw-bold text-uppercase mb-2" style="letter-spacing: 1px;">Destination</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-transparent border-secondary text-secondary"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control bg-transparent border-secondary text-white shadow-none" v-model="searchQuery" placeholder="Search ranges, peaks...">
+                        </div>
+                    </div>
+                    <div style="width: 220px;">
+                        <label class="small text-secondary fw-bold text-uppercase mb-2" style="letter-spacing: 1px;">Difficulty</label>
+                        <select class="form-select bg-transparent border-secondary text-white shadow-none" v-model="filterDifficulty">
+                            <option value="" class="text-dark">All Levels</option>
+                            <option value="Easy" class="text-dark">Easy</option>
+                            <option value="Moderate" class="text-dark">Moderate</option>
+                            <option value="Hard" class="text-dark">Hard</option>
+                            <option value="Extreme" class="text-dark">Extreme</option>
+                        </select>
+                    </div>
+                    <div style="width: 220px;">
+                        <label class="small text-secondary fw-bold text-uppercase mb-2" style="letter-spacing: 1px;">Duration</label>
+                        <select class="form-select bg-transparent border-secondary text-white shadow-none" v-model="filterDuration">
+                            <option value="" class="text-dark">Any Duration</option>
+                            <option value="short" class="text-dark">Short (1-3 Days)</option>
+                            <option value="medium" class="text-dark">Medium (4-7 Days)</option>
+                            <option value="long" class="text-dark">Expedition (8+ Days)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row g-5">
+                    <div class="col-12" v-if="filteredTreks.length === 0">
+                        <div class="text-center py-5">
+                            <p class="text-secondary fs-5">No expeditions match your current criteria.</p>
+                            <button @click="searchQuery=''; filterDifficulty=''; filterDuration='';" class="btn btn-link text-white">Reset Filters</button>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-lg-4 reveal-up" :class="'delay-' + ((index % 3) + 1)" v-for="(trek, index) in filteredTreks" :key="trek.id">
+                        <div class="trek-card h-100 d-flex flex-column">
+                            <div class="trek-image-wrapper">
+                                <img :src="getTrekImage(trek.id)" class="trek-image" alt="Mountain Expedition">
+                                <div class="trek-badge">{{ trek.difficulty }}</div>
+                            </div>
+                            <div class="p-4 d-flex flex-column flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <p class="text-secondary small m-0 text-uppercase" style="letter-spacing: 1px;"><i class="bi bi-geo-alt me-1"></i> {{ trek.location }}</p>
+                                    <h5 class="text-white m-0 fw-normal" style="font-family: 'Playfair Display', serif;">${{ trek.base_price }}</h5>
+                                </div>
+                                <h3 class="trek-title text-white mb-4">{{ trek.name }}</h3>
+                                <div class="row g-0 border border-secondary mb-4 mt-auto">
+                                    <div class="col-6 border-end border-secondary p-3 text-center">
+                                        <div class="text-secondary text-uppercase mb-1" style="font-size: 0.65rem; letter-spacing: 1px;">Duration</div>
+                                        <div class="fw-bold text-white fs-5">{{ trek.duration }} <span class="fs-6 fw-normal">Days</span></div>
+                                    </div>
+                                    <div class="col-6 p-3 text-center">
+                                        <div class="text-secondary text-uppercase mb-1" style="font-size: 0.65rem; letter-spacing: 1px;">Availability</div>
+                                        <div class="fw-bold fs-5" style="color: var(--ontreq-accent);">{{ trek.available_slots }} <span class="fs-6 fw-normal">Slots</span></div>
+                                    </div>
+                                </div>
+                                <button @click="bookRoute(trek.id, trek.name)" class="btn btn-outline-light w-100 py-3 rounded-0 text-uppercase" style="letter-spacing: 2px; font-size: 0.85rem;" :disabled="isLoading">
+                                    {{ isLoading ? 'Processing...' : 'Reserve Securely' }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-show="currentTab === 'history'" style="padding-top: 120px; min-height: 80vh;">
+                <h2 class="flyward-title mb-5" style="font-size: 3.5rem;">My Expeditions</h2>
+                
+                <div class="table-responsive reveal-up border border-secondary p-2 bg-dark bg-opacity-25">
+                    <table class="table table-dark table-hover align-middle m-0" style="background-color: transparent;">
+                        <thead>
+                            <tr class="text-secondary text-uppercase" style="font-size: 0.75rem; letter-spacing: 1px;">
+                                <th class="py-3 ps-4">Booking Ref</th>
+                                <th class="py-3">Route Name</th>
+                                <th class="py-3">Start Date</th>
+                                <th class="py-3">Duration</th>
+                                <th class="py-3">Transaction Date</th>
+                                <th class="py-3 pe-4 text-end">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-if="myBookings.length === 0">
+                                <td colspan="6" class="text-center py-5 text-secondary">
+                                    <i class="bi bi-journal-x fs-2 d-block mb-3"></i>
+                                    You have not booked any expeditions yet.
+                                </td>
+                            </tr>
+                            <tr v-for="booking in myBookings" :key="booking.booking_id">
+                                <td class="ps-4 text-secondary">#{{ booking.booking_id }}</td>
+                                <td class="fw-bold text-white fs-5" style="font-family: 'Playfair Display', serif;">{{ booking.trek_name }}</td>
+                                <td>{{ booking.start_date }}</td>
+                                <td>{{ booking.duration }} Days</td>
+                                <td>{{ booking.booked_on }}</td>
+                                <td class="pe-4 text-end">
+                                    <span class="badge px-3 py-2 text-uppercase"
+                                          :class="{'bg-success bg-opacity-25 text-success border border-success': booking.status === 'Booked', 'bg-secondary bg-opacity-25 text-secondary border border-secondary': booking.status === 'Cancelled'}">
+                                        {{ booking.status }}
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div v-show="currentTab === 'profile'" style="padding-top: 120px; min-height: 80vh;">
+                <h2 class="flyward-title mb-5" style="font-size: 3.5rem;">Account Settings</h2>
+                
+                <div class="row reveal-up">
+                    <div class="col-md-6 col-lg-4">
+                        <div class="trek-card p-4">
+                            <form @submit.prevent="updateProfile">
+                                <div class="mb-4">
+                                    <label class="small text-secondary fw-bold text-uppercase mb-2" style="letter-spacing: 1px;">Update Email</label>
+                                    <input type="email" class="form-control bg-dark border-secondary text-white shadow-none" v-model="profileForm.email" placeholder="New email address">
+                                </div>
+                                <div class="mb-4">
+                                    <label class="small text-secondary fw-bold text-uppercase mb-2" style="letter-spacing: 1px;">New Password</label>
+                                    <input type="password" class="form-control bg-dark border-secondary text-white shadow-none" v-model="profileForm.password" placeholder="Leave blank to keep current">
+                                </div>
+                                <button type="submit" class="btn btn-outline-light w-100 py-3 rounded-0 text-uppercase" style="letter-spacing: 2px;" :disabled="isLoading">
+                                    {{ isLoading ? 'Saving...' : 'Save Changes' }}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="user_dashboard.js"></script>
+</body>
+</html>

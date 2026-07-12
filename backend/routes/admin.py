@@ -52,3 +52,26 @@ def toggle_user_status(user_id):
     
     status_text = "activated" if user.is_active else "blacklisted"
     return jsonify({"msg": f"User account successfully {status_text}."}), 200
+
+from models import Booking, Trek
+
+@admin_bp.route('/bookings', methods=['GET'])
+@jwt_required()
+def get_all_bookings():
+    """Fetch every booking in the system for the Admin."""
+    # Join Booking, User, and Trek tables
+    records = db.session.query(Booking, User, Trek)\
+        .join(User, Booking.user_id == User.id)\
+        .join(Trek, Booking.trek_id == Trek.id).all()
+        
+    booking_list = []
+    for booking, user, trek in records:
+        booking_list.append({
+            "id": booking.id,
+            "user_email": user.email,
+            "trek_name": trek.name,
+            "status": booking.status,
+            "date": booking.booking_date.strftime('%Y-%m-%d') if hasattr(booking, 'booking_date') and booking.booking_date else 'N/A'
+        })
+        
+    return jsonify(booking_list), 200
