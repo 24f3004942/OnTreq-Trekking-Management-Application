@@ -1,7 +1,9 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+from flask_caching import Cache
 
 db = SQLAlchemy()
+cache = Cache()
 
 # ---------------------------------------------------------
 # USER MODEL

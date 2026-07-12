@@ -2,7 +2,7 @@ import os
 from flask import Flask
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
-from models import db, User, StaffProfile, Trek, Booking, TrekReview
+from models import db, cache, User, StaffProfile, Trek, Booking, TrekReview
 from celery import Celery
 
 def create_app():
@@ -26,6 +26,12 @@ def create_app():
     
     
     db.init_app(app)
+
+    # --- NEW: REDIS CACHING CONFIGURATION ---
+    app.config['CACHE_TYPE'] = 'RedisCache'
+    app.config['CACHE_REDIS_URL'] = 'redis://localhost:6379/0'
+    app.config['CACHE_DEFAULT_TIMEOUT'] = 300 # Default cache lives for 5 minutes
+    cache.init_app(app)
 
     # --- NEW: CELERY CONFIGURATION ---
     # Tell Celery to use your local Redis server as the message broker

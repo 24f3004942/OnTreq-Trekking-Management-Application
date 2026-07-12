@@ -53,7 +53,7 @@ def toggle_user_status(user_id):
     status_text = "activated" if user.is_active else "blacklisted"
     return jsonify({"msg": f"User account successfully {status_text}."}), 200
 
-from models import Booking, Trek
+from backend.models import Booking, Trek
 
 @admin_bp.route('/bookings', methods=['GET'])
 @jwt_required()

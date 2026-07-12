@@ -1,5 +1,5 @@
 from app import celery_app
-from models import db, Booking, Trek, User
+from backend.models import db, Booking, Trek, User
 import csv
 import os
 from datetime import datetime, timedelta

@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import db, Trek, User
+from models import db, Trek, User, cache
 from datetime import datetime
 
 trek_bp = Blueprint('trek', __name__)
@@ -50,7 +50,7 @@ def create_trek():
         
         db.session.add(new_trek)
         db.session.commit()
-        
+        cache.delete('public_treks') # NEW: Clear cache on new trek
         return jsonify({"msg": "Trek route created successfully!", "trek_id": new_trek.id}), 201
         
     except Exception as e:
@@ -58,6 +58,7 @@ def create_trek():
 
 # --- 2. Get All Treks ---
 @trek_bp.route('/', methods=['GET'])
+@cache.cached(timeout=60, key_prefix='public_treks') # NEW: Cache this response for 60 seconds
 def get_all_treks():
     """Fetches all treks. Open to public so users can browse available routes."""
     treks = Trek.query.all()
@@ -136,6 +137,7 @@ def update_trek(trek_id):
             trek.end_date = datetime.strptime(data['end_date'], '%Y-%m-%d')
             
         db.session.commit()
+        cache.delete('public_treks') # NEW: Clear cache on update
         return jsonify({"msg": "Trek updated successfully!"}), 200
         
     except Exception as e:
