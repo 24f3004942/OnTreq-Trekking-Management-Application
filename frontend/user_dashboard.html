@@ -151,6 +151,7 @@
                 <div>
                     <button @click="currentTab = 'browse'" :class="['btn btn-link text-decoration-none me-4 text-uppercase small', currentTab === 'browse' ? 'text-white fw-bold' : 'text-secondary']" style="letter-spacing: 1px;">Discover</button>
                     <button @click="currentTab = 'history'" :class="['btn btn-link text-decoration-none me-4 text-uppercase small', currentTab === 'history' ? 'text-white fw-bold' : 'text-secondary']" style="letter-spacing: 1px;">My Bookings</button>
+                    <button @click="currentTab = 'trekHistory'" :class="['btn btn-link text-decoration-none me-4 text-uppercase small', currentTab === 'trekHistory' ? 'text-white fw-bold' : 'text-secondary']" style="letter-spacing: 1px;">History</button>
                     <button @click="currentTab = 'profile'" :class="['btn btn-link text-decoration-none me-5 text-uppercase small', currentTab === 'profile' ? 'text-white fw-bold' : 'text-secondary']" style="letter-spacing: 1px;">Profile</button>
                     <button @click="logout" class="btn btn-outline-secondary btn-sm rounded-0 px-4 text-uppercase" style="letter-spacing: 1px;">Sign Out</button>
                 </div>
@@ -168,6 +169,7 @@
         <main class="container" style="position: relative; z-index: 5; padding-bottom: 5rem;" :style="{ marginTop: currentTab === 'browse' ? '-4rem' : '0' }">
             
             <div v-show="currentTab === 'browse'">
+                <h4 class="text-white mb-4" style="font-family: 'Playfair Display', serif;">Welcome back, <span style="color: var(--ontreq-accent);">{{ userEmail }}</span>!</h4>
                 <div class="filter-bar reveal-up mb-5 d-flex gap-4 flex-wrap align-items-end shadow-lg backdrop-blur">
                     <div class="flex-grow-1 min-w-200">
                         <label class="small text-secondary fw-bold text-uppercase mb-2" style="letter-spacing: 1px;">Destination</label>
@@ -198,9 +200,23 @@
                 </div>
 
                 <div class="row g-5">
-                    <div class="col-12" v-if="filteredTreks.length === 0">
+                    <div class="col-12" v-if="loadError">
+                        <div class="alert alert-danger text-center py-4">
+                            <i class="bi bi-exclamation-triangle fs-3 d-block mb-2"></i>
+                            <strong>Could not load expeditions from the server.</strong><br>
+                            <span class="small">Make sure the Flask backend is running on port 5000 and the database has been created (python setup_db.py), then <a href="#" class="alert-link" @click.prevent="fetchTreks">retry</a>.</span>
+                        </div>
+                    </div>
+                    <div class="col-12" v-else-if="treks.length === 0">
                         <div class="text-center py-5">
-                            <p class="text-secondary fs-5">No expeditions match your current criteria.</p>
+                            <p class="text-secondary fs-5">No treks have been published yet.</p>
+                            <p class="text-secondary small">Once the Admin creates treks and opens them for booking, they will appear here.</p>
+                        </div>
+                    </div>
+                    <div class="col-12" v-else-if="filteredTreks.length === 0">
+                        <div class="text-center py-5">
+                            <p class="text-secondary fs-5">No open expeditions match your current criteria.</p>
+                            <p class="text-secondary small mb-2">Only treks that are currently <strong>Open</strong> with available slots are shown here.</p>
                             <button @click="searchQuery=''; filterDifficulty=''; filterDuration='';" class="btn btn-link text-white">Reset Filters</button>
                         </div>
                     </div>
@@ -227,9 +243,14 @@
                                         <div class="fw-bold fs-5" style="color: var(--ontreq-accent);">{{ trek.available_slots }} <span class="fs-6 fw-normal">Slots</span></div>
                                     </div>
                                 </div>
-                                <button @click="bookRoute(trek.id, trek.name)" class="btn btn-outline-light w-100 py-3 rounded-0 text-uppercase" style="letter-spacing: 2px; font-size: 0.85rem;" :disabled="isLoading">
-                                    {{ isLoading ? 'Processing...' : 'Reserve Securely' }}
-                                </button>
+                                <div class="mt-auto d-flex gap-2">
+                                    <button @click="viewDetails(trek)" class="btn btn-outline-secondary w-50 py-2 rounded-0 text-uppercase" style="letter-spacing: 1px; font-size: 0.75rem;">
+                                        View Details
+                                    </button>
+                                    <button @click="initiateBooking(trek.id, trek.name)" class="btn btn-outline-light w-50 py-2 rounded-0 text-uppercase" style="letter-spacing: 1px; font-size: 0.75rem;" :disabled="isLoading">
+                                        Reserve
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -257,12 +278,13 @@
                                 <th class="py-3">Start Date</th>
                                 <th class="py-3">Duration</th>
                                 <th class="py-3">Transaction Date</th>
-                                <th class="py-3 pe-4 text-end">Status</th>
+                                <th class="py-3 text-end">Status</th>
+                                <th class="py-3 pe-4 text-end">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-if="myBookings.length === 0">
-                                <td colspan="6" class="text-center py-5 text-secondary">
+                                <td colspan="7" class="text-center py-5 text-secondary">
                                     <i class="bi bi-journal-x fs-2 d-block mb-3"></i>
                                     You have not booked any expeditions yet.
                                 </td>
@@ -273,9 +295,59 @@
                                 <td>{{ booking.start_date }}</td>
                                 <td>{{ booking.duration }} Days</td>
                                 <td>{{ booking.booked_on }}</td>
-                                <td class="pe-4 text-end">
+                                <td class="text-end">
                                     <span class="badge px-3 py-2 text-uppercase"
-                                          :class="{'bg-success bg-opacity-25 text-success border border-success': booking.status === 'Booked', 'bg-secondary bg-opacity-25 text-secondary border border-secondary': booking.status === 'Cancelled'}">
+                                          :class="{
+                                            'bg-success bg-opacity-25 text-success border border-success': booking.status === 'Booked',
+                                            'bg-secondary bg-opacity-25 text-secondary border border-secondary': booking.status === 'Cancelled',
+                                            'bg-info bg-opacity-25 text-info border border-info': booking.status === 'Completed'
+                                          }">
+                                        {{ booking.status }}
+                                    </span>
+                                </td>
+                                <td class="pe-4 text-end">
+                                    <button @click="viewBookingTrek(booking.trek_id)" class="btn btn-sm btn-outline-secondary me-2" title="View Trek Details">
+                                        <i class="bi bi-eye"></i> View Details
+                                    </button>
+                                    <button v-if="booking.status === 'Booked'" @click="cancelBooking(booking.booking_id)"
+                                            class="btn btn-sm btn-outline-danger" title="Cancel Booking">
+                                        <i class="bi bi-x-circle"></i> Cancel
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            
+            <!-- TREKKING HISTORY (wireframe screen 12: completed & cancelled treks) -->
+            <div v-show="currentTab === 'trekHistory'" style="padding-top: 120px; min-height: 80vh;">
+                <h2 class="flyward-title mb-5" style="font-size: 3.5rem;">Trekking History</h2>
+                <div class="table-responsive reveal-up border border-secondary p-2 bg-dark bg-opacity-25">
+                    <table class="table table-dark table-hover align-middle m-0" style="background-color: transparent;">
+                        <thead>
+                            <tr class="text-secondary text-uppercase" style="font-size: 0.75rem; letter-spacing: 1px;">
+                                <th class="py-3 ps-4">Trek Name</th>
+                                <th class="py-3">Trek Dates</th>
+                                <th class="py-3">Completed On</th>
+                                <th class="py-3 text-end pe-4">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-if="pastBookings.length === 0">
+                                <td colspan="4" class="text-center py-5 text-secondary">
+                                    <i class="bi bi-hourglass fs-2 d-block mb-3"></i>
+                                    No completed or cancelled treks yet.
+                                </td>
+                            </tr>
+                            <tr v-for="booking in pastBookings" :key="'h' + booking.booking_id">
+                                <td class="ps-4 fw-bold text-white fs-5" style="font-family: 'Playfair Display', serif;">{{ booking.trek_name }}</td>
+                                <td>{{ booking.start_date }} ({{ booking.duration }} Days)</td>
+                                <td>{{ booking.completed_on || '—' }}</td>
+                                <td class="text-end pe-4">
+                                    <span class="badge px-3 py-2 text-uppercase"
+                                          :class="booking.status === 'Completed' ? 'bg-success bg-opacity-25 text-success border border-success' : 'bg-secondary bg-opacity-25 text-secondary border border-secondary'">
                                         {{ booking.status }}
                                     </span>
                                 </td>
@@ -283,6 +355,7 @@
                         </tbody>
                     </table>
                 </div>
+                <p class="text-secondary small mt-3"><i class="bi bi-info-circle me-2"></i>History shows all your completed and cancelled treks.</p>
             </div>
 
             <div v-show="currentTab === 'profile'" style="padding-top: 120px; min-height: 80vh;">
@@ -309,10 +382,113 @@
                 </div>
             </div>
 
+            
+
+        
+
+        
+
         </main>
+
+        <!-- Modals & toasts live OUTSIDE <main> (which creates a z-index stacking
+             context) but INSIDE #user-app so Vue bindings still work. Keeping them
+             here prevents the Bootstrap backdrop from covering the modal. -->
+        <!-- PAYMENT MODAL -->
+        <div class="modal fade" id="paymentModal" tabindex="-1" aria-hidden="true" data-bs-theme="dark">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content bg-dark border-secondary">
+                    <div class="modal-header border-secondary">
+                        <h5 class="modal-title text-white fw-bold">Secure Checkout</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <p class="text-secondary mb-4">Complete your reservation for <strong class="text-white">{{ selectedTrekName }}</strong></p>
+                        <form @submit.prevent="processPayment">
+                            <div class="mb-4">
+                                <label class="small text-secondary fw-bold mb-2">Card Number</label>
+                                <input type="text" class="form-control bg-transparent text-white shadow-none border-secondary" placeholder="0000 0000 0000 0000" required maxlength="19">
+                            </div>
+                            <div class="row mb-4">
+                                <div class="col-6">
+                                    <label class="small text-secondary fw-bold mb-2">Expiry Date</label>
+                                    <input type="text" class="form-control bg-transparent text-white shadow-none border-secondary" placeholder="MM/YY" required maxlength="5">
+                                </div>
+                                <div class="col-6">
+                                    <label class="small text-secondary fw-bold mb-2">Security Code (CVV)</label>
+                                    <input type="password" class="form-control bg-transparent text-white shadow-none border-secondary" placeholder="123" required maxlength="3">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-brand w-100 py-3 rounded-0 text-uppercase" style="letter-spacing: 1px;" :disabled="isProcessingPayment">
+                                <span v-if="isProcessingPayment" class="spinner-border spinner-border-sm me-2"></span>
+                                {{ isProcessingPayment ? 'Authorizing Payment...' : 'Pay & Confirm Booking' }}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="detailsModal" tabindex="-1" aria-hidden="true" data-bs-theme="dark">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content bg-dark border-secondary" v-if="selectedTrekDetails">
+                    <div class="modal-header border-secondary position-relative p-0" style="height: 200px; overflow: hidden;">
+                        <img :src="getTrekImage(selectedTrekDetails.id)" class="w-100" style="object-fit: cover; opacity: 0.7;">
+                        <div class="position-absolute bottom-0 start-0 p-4">
+                            <span class="badge bg-primary mb-2">{{ selectedTrekDetails.difficulty }}</span>
+                            <h2 class="text-white fw-bold m-0" style="font-family: 'Playfair Display', serif;">{{ selectedTrekDetails.name }}</h2>
+                        </div>
+                        <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-3" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <div class="row g-4 mb-4">
+                            <div class="col-sm-6">
+                                <p class="text-secondary small fw-bold mb-1 text-uppercase">Location</p>
+                                <p class="text-white fs-5"><i class="bi bi-geo-alt me-2 text-danger"></i>{{ selectedTrekDetails.location }}</p>
+                            </div>
+                            <div class="col-sm-6">
+                                <p class="text-secondary small fw-bold mb-1 text-uppercase">Base Price</p>
+                                <p class="text-white fs-5">${{ selectedTrekDetails.base_price }} USD</p>
+                            </div>
+                            <div class="col-sm-6">
+                                <p class="text-secondary small fw-bold mb-1 text-uppercase">Expedition Dates</p>
+                                <p class="text-white"><i class="bi bi-calendar-check me-2"></i>{{ selectedTrekDetails.start_date }} to {{ selectedTrekDetails.end_date || 'TBD' }}</p>
+                            </div>
+                            <div class="col-sm-6">
+                                <p class="text-secondary small fw-bold mb-1 text-uppercase">Availability</p>
+                                <p class="text-white"><i class="bi bi-person-lines-fill me-2"></i>{{ selectedTrekDetails.available_slots }} slots remaining</p>
+                            </div>
+                        </div>
+                        <div class="bg-black bg-opacity-25 p-3 border border-secondary rounded">
+                            <p class="text-secondary small fw-bold mb-2">OPERATIONAL STATUS</p>
+                            <span class="badge border border-success text-success px-3 py-2">{{ selectedTrekDetails.status }}</span>
+                            <span v-if="selectedTrekDetails.max_altitude" class="ms-3 text-secondary small">Max Altitude: {{ selectedTrekDetails.max_altitude }}m</span>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-secondary">
+                        <button type="button" class="btn btn-brand px-4 py-2 text-uppercase" @click="initiateBooking(selectedTrekDetails.id, selectedTrekDetails.name)">
+                            Proceed to Booking
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TOAST NOTIFICATION CONTAINER -->
+        <div class="toast-container position-fixed bottom-0 end-0 p-4" style="z-index: 2000">
+            <div id="liveToast" class="toast align-items-center text-bg-dark border-secondary" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body" id="toastMessage" style="font-size: 0.95rem;">
+                        <!-- Message populated via Vue -->
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="user_dashboard.js"></script>
 </body>
 </html>

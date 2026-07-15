@@ -11,6 +11,18 @@ createApp({
             isLoading: false
         }
     },
+    computed: {
+        openTreksCount() {
+            return this.myTreks.filter(t => t.status === 'Open').length;
+        },
+        totalParticipants() {
+            // FIX: backend's /api/staff-ops/my-treks returns the count under the
+            // key `participants` (matches what the per-row badge already used
+            // in staff_dashboard.html) - this was reading `participant_count`,
+            // which never existed, so the dashboard total was always stuck at 0.
+            return this.myTreks.reduce((total, trek) => total + (trek.participants || 0), 0);
+        }
+    },
     mounted() {
         // STRICT SECURITY GUARD: Only Staff allowed
         const token = localStorage.getItem('token');
@@ -78,6 +90,16 @@ createApp({
             }
         },
 
+        // Wireframe screen 9: explicit "Mark as Completed" action.
+        // Sets the status and persists immediately (backend cascades all
+        // 'Booked' bookings on this trek to 'Completed').
+        async markCompleted(trek) {
+            if (!confirm(`Mark "${trek.name}" as Completed? All active bookings will be closed out.`)) return;
+            trek.status = 'Completed';
+            await this.saveTrekUpdates(trek);
+            this.fetchMyTreks();
+        },
+
         // NEW METHOD: Fetch participants and open modal
         async viewParticipants(trek) {
             this.selectedTrekName = trek.name;
@@ -89,8 +111,7 @@ createApp({
                 if (response.ok) {
                     this.participants = await response.json();
                     // Trigger Bootstrap Modal
-                    const modal = new bootstrap.Modal(document.getElementById('participantsModal'));
-                    modal.show();
+                    bootstrap.Modal.getOrCreateInstance(document.getElementById('participantsModal')).show();
                 }
             } catch (error) {
                 console.error("Error fetching participants:", error);

@@ -19,7 +19,7 @@
             <div class="flex-grow-1">
                 <p class="text-secondary small fw-bold mb-2 px-2">GUIDE MENU</p>
                 <a href="staff_dashboard.html" class="nav-link-custom active"><i class="bi bi-compass"></i> My Assigned Treks</a>
-                <a href="#" class="nav-link-custom"><i class="bi bi-people"></i> My Participants</a> 
+                <a href="settings.html" class="nav-link-custom"><i class="bi bi-gear"></i> Settings</a>
             </div>
 
             <button @click="logout" class="btn btn-outline-danger w-100 mt-auto">
@@ -33,8 +33,31 @@
                 <p class="text-secondary m-0">Manage your assigned routes, adjust availability, and track progress.</p>
             </header>
 
+
             <div v-if="message" :class="['alert', isError ? 'alert-danger' : 'alert-success', 'py-2', 'mb-4']">
                 {{ message }}
+            </div>
+
+            <!-- METRIC CARDS -->
+            <div class="row g-4 mb-5">
+                <div class="col-md-4">
+                    <div class="glass-card p-4 border-start border-4 border-primary">
+                        <p class="text-secondary small fw-bold mb-1">ASSIGNED TREKS</p>
+                        <h2 class="text-white fw-bolder m-0">{{ myTreks.length }}</h2>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="glass-card p-4 border-start border-4 border-success">
+                        <p class="text-secondary small fw-bold mb-1">ONGOING / OPEN</p>
+                        <h2 class="text-white fw-bolder m-0">{{ openTreksCount }}</h2>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="glass-card p-4 border-start border-4 border-warning">
+                        <p class="text-secondary small fw-bold mb-1">TOTAL PARTICIPANTS</p>
+                        <h2 class="text-white fw-bolder m-0">{{ totalParticipants }}</h2>
+                    </div>
+                </div>
             </div>
 
             <div class="glass-card p-4">
@@ -78,10 +101,11 @@
                                 
                                 <td style="width: 180px;">
                                     <select class="form-select form-select-sm bg-dark text-white border-secondary" v-model="trek.status">
-                                        <option value="Open">Open (Booking allowed)</option>
-                                        <option value="Closed">Closed (Full/Halted)</option>
-                                        <option value="Ongoing">Ongoing (In progress)</option>
-                                        <option value="Completed">Completed (Finished)</option>
+                                        <option value="Approved" disabled>Approved (Not yet open)</option>
+                                        <option value="Open">Open (Accepting Bookings)</option>
+                                        <option value="Ongoing">Ongoing (Trek Started)</option>
+                                        <option value="Closed">Closed (Full / Paused)</option>
+                                        <option value="Completed">Completed (Trek Finished)</option>
                                     </select>
                                 </td>
                                 
@@ -90,8 +114,11 @@
                                     <button @click="viewParticipants(trek)" class="btn btn-sm btn-outline-info me-2" title="View Participants">
                                         <i class="bi bi-people"></i>
                                     </button>
-                                    <button @click="saveTrekUpdates(trek)" class="btn btn-sm btn-brand" :disabled="isLoading" title="Save Changes">
+                                    <button @click="saveTrekUpdates(trek)" class="btn btn-sm btn-brand me-2" :disabled="isLoading" title="Save Changes">
                                         <i class="bi bi-check2-circle"></i> Save
+                                    </button>
+                                    <button v-if="trek.status !== 'Completed'" @click="markCompleted(trek)" class="btn btn-sm btn-outline-success" :disabled="isLoading" title="Mark as Completed">
+                                        <i class="bi bi-flag-fill"></i> Mark as Completed
                                     </button> 
                                 </td>
                             </tr>
@@ -99,10 +126,7 @@
                     </table>
                 </div>
             </div>
-        </main>
-    </div>
-
-
+        
 <!-- Participants Modal -->
         <div class="modal fade" id="participantsModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -140,7 +164,11 @@
                 </div>
             </div>
         </div>
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+        </main>
+    </div>
+
+
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="staff_dashboard.js"></script>
 </body>
 </html>

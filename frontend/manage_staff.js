@@ -4,10 +4,21 @@ createApp({
     data() {
         return {
             staffList: [],
-            form: { name: '', email: '', contact: '', password: '' },
+            searchQuery: '',
+            form: { name: '', email: '', contact: '', password: '', confirmPassword: '', years_experience: '', certifications: '' },
             message: '',
             isError: false,
             isLoading: false
+        }
+    },
+    computed: {
+        // Milestone 3 Requirement: "Search users, staff, or treks"
+        filteredStaff() {
+            if (!this.searchQuery) return this.staffList;
+            const q = this.searchQuery.toLowerCase();
+            return this.staffList.filter(s =>
+                s.name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q) || String(s.id).includes(q)
+            );
         }
     },
     mounted() {
@@ -59,6 +70,29 @@ createApp({
                 this.isError = true;
             } finally {
                 this.isLoading = false;
+            }
+        },
+        async toggleStatus(staff) {
+            const action = staff.is_active ? 'blacklist' : 'reactivate';
+            if (!confirm(`Are you sure you want to ${action} ${staff.name}?`)) return;
+            try {
+                const response = await fetch(`http://127.0.0.1:5000/api/staff/${staff.id}/toggle-status`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                if (response.status === 401) return this.handleSessionExpired();
+                const data = await response.json();
+                if (response.ok) {
+                    this.message = data.msg;
+                    this.isError = false;
+                    this.fetchStaff();
+                } else {
+                    this.message = data.msg || 'Operation failed.';
+                    this.isError = true;
+                }
+            } catch (error) {
+                this.message = 'Network error occurred.';
+                this.isError = true;
             }
         },
         async removeStaff(id) {

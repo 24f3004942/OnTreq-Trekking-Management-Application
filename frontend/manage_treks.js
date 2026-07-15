@@ -5,12 +5,28 @@ createApp({
         return {
             treks: [],
             staffList: [],
-            form: { name: '', location: '', difficulty: 'Moderate', duration: '', available_slots: '', start_date: '', end_date: '', base_price: '', max_altitude: '' },
+            searchQuery: '',
+            form: { name: '', location: '', difficulty: 'Moderate', duration: '', available_slots: '', start_date: '', end_date: '', base_price: '', max_altitude: '', staff_id: '', status: 'Pending' },
             message: '',
             isError: false,
             isLoading: false,
             isEditing: false,
             editId: null
+        }
+    },
+    computed: {
+        todayStr() {
+        return new Date().toISOString().split('T')[0];
+        },
+        // Wireframe screen 4 + Milestone 3: search treks by name, location, or ID
+        filteredTreks() {
+            if (!this.searchQuery) return this.treks;
+            const q = this.searchQuery.toLowerCase();
+            return this.treks.filter(t =>
+                t.name.toLowerCase().includes(q) ||
+                t.location.toLowerCase().includes(q) ||
+                String(t.id).includes(q)
+            );
         }
     },
     // NEW: Watchers keep an eye on these specific fields
@@ -157,7 +173,13 @@ createApp({
             }
         },
         resetForm() {
-            this.form = { name: '', location: '', difficulty: 'Moderate', duration: '', available_slots: '', start_date: '', end_date: '', base_price: '', max_altitude: '', staff_id: '' };
+            this.form = {
+                id: null, name: '', location: '', difficulty: 'Moderate',
+                duration: '', base_price: '', max_altitude: '',
+                staff_id: '', available_slots: '', start_date: '', end_date: '',
+                status: 'Pending' // <--- JUST ADD THIS LINE
+            };
+            this.isEditing = false;
         },
         handleSessionExpired() {
             alert("Your security session has expired. Please log in again.");

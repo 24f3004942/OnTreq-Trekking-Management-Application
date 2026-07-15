@@ -13,10 +13,20 @@ createApp({
             isLoading: false,
             currentTab: 'browse',
             profileForm: { email: '', password: '' },
-            exportStatus: ''
+            exportStatus: '',
+            selectedTrekId: null,
+            selectedTrekName: '',
+            isProcessingPayment: false,
+            loadError: false, // true when the trek catalog could not be fetched
+            userEmail: '', // NEW: For the Welcome Message
+            selectedTrekDetails: null // NEW: For the Details Modal
         }
     },
     computed: {
+        // Wireframe screen 12: Trekking History = completed & cancelled only.
+        pastBookings() {
+            return this.myBookings.filter(b => b.status === 'Completed' || b.status === 'Cancelled');
+        },
         filteredTreks() {
             return this.treks.filter(trek => {
                 if (trek.status !== 'Open' || trek.available_slots <= 0) return false;
@@ -35,12 +45,34 @@ createApp({
         }
     },
     mounted() {
-        const token = localStorage.getItem('token');
+       const token = localStorage.getItem('token');
         const role = localStorage.getItem('role');
         if (!token || role !== 'trekker') {
             window.location.href = 'index.html';
             return;
         }
+        
+        // Welcome the user by FIRST NAME (per wireframe: "Welcome, Amit!").
+        // The JWT now carries first_name as an additional claim; if it's
+        // missing (older token), fall back to /api/auth/me, then to the
+        // email's local part as a last resort.
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            this.userEmail = payload.first_name || '';
+            if (!this.userEmail) {
+                fetch('http://127.0.0.1:5000/api/auth/me', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }).then(r => r.ok ? r.json() : null).then(me => {
+                    if (me && me.first_name) this.userEmail = me.first_name;
+                    else if (me && me.email) this.userEmail = me.email.split('@')[0];
+                });
+                const p = JSON.parse(atob(token.split('.')[1]));
+                this.userEmail = (p.email || 'Adventurer').split('@')[0];
+            }
+        } catch(e) {
+            this.userEmail = 'Adventurer';
+        }
+
         this.fetchTreks();
         this.fetchMyBookings();
     },
@@ -128,8 +160,8 @@ createApp({
                 if (response.ok) this.myBookings = await response.json();
             } catch (error) { console.error("Error fetching bookings:", error); }
         },
-        async bookRoute(trekId, trekName) {
-            if (!confirm(`Are you ready to book the ${trekName} adventure?`)) return;
+        // UPDATED: Book Route (Replaced alerts with Toasts)
+        async bookRoute(trekId) {
             this.isLoading = true;
             try {
                 const response = await fetch(`http://127.0.0.1:5000/api/user-ops/book/${trekId}`, {
@@ -138,43 +170,138 @@ createApp({
                 });
                 if (response.status === 401) return this.handleSessionExpired();
                 const data = await response.json();
+                
                 if (response.ok) {
-                    alert(data.msg); 
+                    this.showToast(data.msg, true);
                     this.fetchTreks(); 
                     this.fetchMyBookings(); 
                     this.currentTab = 'history'; 
                 } else {
-                    alert("Booking Failed: " + data.msg);
+                    this.showToast("Booking Failed: " + data.msg, false);
                 }
             } catch (error) {
-                alert("Network error occurred.");
+                this.showToast("Network error occurred.", false);
             } finally {
                 this.isLoading = false;
             }
         },
+
+        // NEW: Cancel an active booking (releases the trek slot back to the pool)
+        async cancelBooking(bookingId) {
+            if (!confirm("Cancel this booking? Your slot will be released back for other trekkers.")) return;
+            this.isLoading = true;
+            try {
+                const response = await fetch(`http://127.0.0.1:5000/api/user-ops/my-bookings/${bookingId}/cancel`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                if (response.status === 401) return this.handleSessionExpired();
+                const data = await response.json();
+                if (response.ok) {
+                    this.showToast(data.msg, true);
+                    this.fetchMyBookings();
+                    this.fetchTreks();
+                } else {
+                    this.showToast(data.msg || 'Could not cancel booking.', false);
+                }
+            } catch (error) {
+                this.showToast('Network error occurred.', false);
+            } finally {
+                this.isLoading = false;
+            }
+        },
+
+        // NEW: Toast Notification Handler
+        showToast(message, isSuccess = true) {
+            const toastEl = document.getElementById('liveToast');
+            const msgEl = document.getElementById('toastMessage');
+            msgEl.textContent = message;
+            msgEl.className = `toast-body fw-bold ${isSuccess ? 'text-success' : 'text-danger'}`;
+            const toast = new bootstrap.Toast(toastEl);
+            toast.show();
+        },
+
+        // Remove any orphaned Bootstrap backdrops / body scroll locks.
+        // Prevents the "page frozen behind a grey overlay" state when
+        // switching between the details modal and the payment modal.
+        cleanupModalArtifacts() {
+            if (!document.querySelector('.modal.show')) {
+                document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
+            }
+        },
+
+        // NEW: Intercept booking click to show Payment Modal
+        initiateBooking(trekId, trekName) {
+            this.selectedTrekId = trekId;
+            this.selectedTrekName = trekName;
+
+            const detailsEl = document.getElementById('detailsModal');
+            const detailsInst = detailsEl ? bootstrap.Modal.getInstance(detailsEl) : null;
+            const openPayment = () => {
+                this.cleanupModalArtifacts();
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('paymentModal')).show();
+            };
+
+            if (detailsInst && detailsEl.classList.contains('show')) {
+                // Wait for the details modal to fully hide before opening the
+                // payment modal, so their backdrops never overlap.
+                detailsEl.addEventListener('hidden.bs.modal', openPayment, { once: true });
+                detailsInst.hide();
+            } else {
+                openPayment();
+            }
+        },
+
+        // Wireframe screen 10: "View Details" action on a booking row -
+        // looks the trek up from the loaded catalog and reuses the details modal.
+        viewBookingTrek(trekId) {
+            const trek = this.treks.find(t => t.id === trekId);
+            if (trek) this.viewDetails(trek);
+            else this.showToast('Trek details are no longer available.', false);
+        },
+
+        viewDetails(trek) {
+            this.selectedTrekDetails = trek;
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('detailsModal')).show();
+        },
+
+        // NEW: Simulate Payment Gateway Delay
+        async processPayment() {
+            this.isProcessingPayment = true;
+            setTimeout(() => {
+                this.isProcessingPayment = false;
+                const el = document.getElementById('paymentModal');
+                const modal = bootstrap.Modal.getInstance(el);
+                if (modal) modal.hide();
+                // Once fully hidden, clear any leftover backdrop before booking.
+                el.addEventListener('hidden.bs.modal', () => this.cleanupModalArtifacts(), { once: true });
+                setTimeout(() => this.cleanupModalArtifacts(), 500); // safety net
+                // Proceed to actual backend booking API
+                this.bookRoute(this.selectedTrekId);
+            }, 1500); // 1.5 second fake processing delay
+        },
+
+        // UPDATED: Profile Update (Replaced alerts with Toasts)
         async updateProfile() {
             this.isLoading = true;
             try {
                 const response = await fetch('http://127.0.0.1:5000/api/user-ops/profile', {
                     method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    },
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
                     body: JSON.stringify(this.profileForm)
                 });
                 const data = await response.json();
                 if (response.ok) {
-                    alert(data.msg);
+                    this.showToast(data.msg, true);
                     this.profileForm = { email: '', password: '' };
                 } else {
-                    alert("Error: " + data.msg);
+                    this.showToast("Error: " + data.msg, false);
                 }
-            } catch (error) {
-                alert("Network error.");
-            } finally {
-                this.isLoading = false;
-            }
+            } catch (error) { this.showToast("Network error.", false); } 
+            finally { this.isLoading = false; }
         },
         handleSessionExpired() {
             alert("Session expired. Please log in again.");

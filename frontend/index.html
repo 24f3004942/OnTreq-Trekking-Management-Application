@@ -3,29 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OnTreq | Modern Trekking Management</title>
-    
+    <title>OnTreq | Sign In</title>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    
     <link rel="stylesheet" href="static/style.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#FF4757">
 </head>
 <body>
 
-    <div id="app" class="hero-section">
+    <div id="app" class="hero-section d-flex align-items-center min-vh-100 py-5">
         <div class="container">
-            <div class="row justify-content-center align-items-center">
-                
-                <div class="col-lg-6 mb-5 mb-lg-0 text-center text-lg-start">
-                    <h1 class="display-3 fw-bolder mb-3 text-white">On<span style="color: var(--ontreq-accent);">Treq</span></h1>
-                    <p class="lead text-secondary mb-4">Elevate your adventure operations. The ultimate platform to manage routes, staff, and trekkers with precision.</p>
+            
+            <div class="row justify-content-center align-items-center g-4">
+
+                <div class="col-lg-6 text-center text-lg-start">
+                    <a href="landing.html" class="text-decoration-none">
+                        <h1 class="display-3 fw-bolder mb-3 text-white">On<span style="color: var(--ontreq-accent);">Treq</span></h1>
+                    </a>
+                    <p class="lead text-secondary mb-0">Elevate your adventure operations. The ultimate platform to manage routes, staff, and trekkers with precision.</p>
                 </div>
 
                 <div class="col-lg-5 col-md-8">
-                    <div class="card glass-card p-4 p-md-5">
-                        <h3 class="fw-bold mb-4">{{ isLoginMode ? 'Welcome Back' : 'Start Your Journey' }}</h3>
-                        
+                    <div class="card glass-card p-4 p-md-5 shadow-lg">
+                        <h3 class="fw-bold mb-4">Welcome Back</h3>
+
                         <div v-if="errorMessage" class="alert alert-danger py-2">{{ errorMessage }}</div>
                         <div v-if="successMessage" class="alert alert-success py-2">{{ successMessage }}</div>
 
@@ -34,26 +36,63 @@
                                 <label class="form-label text-secondary small text-uppercase fw-bold">Email Address</label>
                                 <input type="email" class="form-control form-control-lg" v-model="email" required placeholder="name@example.com">
                             </div>
-                            
+
                             <div class="mb-4">
                                 <label class="form-label text-secondary small text-uppercase fw-bold">Password</label>
                                 <input type="password" class="form-control form-control-lg" v-model="password" required placeholder="••••••••">
                             </div>
 
                             <button type="submit" class="btn btn-brand btn-lg w-100 mb-3" :disabled="isLoading">
-                                {{ isLoading ? 'Processing...' : (isLoginMode ? 'Sign In' : 'Create Trekker Account') }}
+                                {{ isLoading ? 'Processing...' : 'Sign In' }}
                             </button>
                         </form>
 
-                        <div class="text-center mt-3">
-                            <span class="text-secondary">{{ isLoginMode ? "Don't have an account?" : "Already have an account?" }}</span>
-                            <a href="#" class="text-decoration-none ms-2" style="color: var(--ontreq-accent);" @click.prevent="toggleMode">
-                                {{ isLoginMode ? 'Register Here' : 'Log In' }}
+                        <div class="form-check mb-4 text-start">
+                            <input class="form-check-input bg-transparent border-secondary" type="checkbox" id="rememberMe">
+                            <label class="form-check-label text-secondary small" for="rememberMe">
+                                Remember me on this device
+                            </label>
+                        </div>
+
+                        <div class="text-center">
+                            <span class="text-secondary">Don't have an account?</span>
+                            <a href="register.html" class="text-decoration-none ms-2" style="color: var(--ontreq-accent);">
+                                Register here
                             </a>
+                            <p class="text-secondary small mt-3 mb-0">
+                                <em>Note: Only Users (Trekkers) can register themselves. Trekking Staff are created by Admin.</em>
+                            </p>
                         </div>
                     </div>
                 </div>
 
+            </div>
+
+            <div id="public-stats-row" class="row justify-content-center text-center pt-5 mt-5 g-3" style="display:none;">
+                <div class="col-6 col-md-3">
+                    <div class="glass-card p-3">
+                        <h3 class="fw-bold m-0" id="stat-open-treks">0</h3>
+                        <p class="text-secondary small m-0 text-uppercase">Open Expeditions</p>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="glass-card p-3">
+                        <h3 class="fw-bold m-0" id="stat-total-treks">0</h3>
+                        <p class="text-secondary small m-0 text-uppercase">Total Routes</p>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="glass-card p-3">
+                        <h3 class="fw-bold m-0" id="stat-completed-treks">0</h3>
+                        <p class="text-secondary small m-0 text-uppercase">Treks Completed</p>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="glass-card p-3">
+                        <h3 class="fw-bold m-0" id="stat-total-trekkers">0</h3>
+                        <p class="text-secondary small m-0 text-uppercase">Trekkers Onboard</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -63,21 +102,20 @@
     <script src="app.js"></script>
 
     <script>
-        // 1. PWA Registration
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js');
         }
-        
-        // 2. Public Pre-Login Stats (Milestone 10 Requirement)
-        fetch('http://127.0.0.1:5000/api/treks/')
+
+        fetch('http://127.0.0.1:5000/api/public/stats')
             .then(res => res.json())
             .then(data => {
-                const openTreks = data.filter(t => t.status === 'Open').length;
-                const statsDiv = document.createElement('div');
-                statsDiv.className = "text-center mt-5 text-secondary small reveal-up is-visible";
-                statsDiv.innerHTML = `<i class="bi bi-activity text-success"></i> System Online: <strong>${openTreks}</strong> active expeditions currently accepting bookings.`;
-                document.querySelector('.auth-card').after(statsDiv);
-            });
+                document.getElementById('stat-open-treks').textContent = data.open_treks;
+                document.getElementById('stat-total-treks').textContent = data.total_treks;
+                document.getElementById('stat-completed-treks').textContent = data.completed_treks;
+                document.getElementById('stat-total-trekkers').textContent = data.total_trekkers;
+                document.getElementById('public-stats-row').style.display = 'flex';
+            })
+            .catch(err => console.error('Could not load public stats:', err));
     </script>
 </body>
 </html>

@@ -8,7 +8,8 @@ createApp({
                 users: 0,
                 staff: 0,
                 bookings: 0
-            }
+            },
+            recentBookings: [] // Added this for the dashboard feed
         }
     },
     mounted() {
@@ -22,8 +23,9 @@ createApp({
             return;
         }
 
-        // Fetch stats when page loads
+        // Fetch stats and recent bookings when page loads
         this.fetchStats();
+        this.fetchRecentBookings();
     },
     methods: {
         async fetchStats() {
@@ -40,6 +42,20 @@ createApp({
                 }
             } catch (error) {
                 console.error("Failed to load dashboard stats:", error);
+            }
+        },
+        async fetchRecentBookings() {
+            try {
+                const response = await fetch('http://127.0.0.1:5000/api/admin/bookings', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    // Reverse to get newest first, then slice the top 5
+                    this.recentBookings = data.reverse().slice(0, 5); 
+                }
+            } catch (error) {
+                console.error("Failed to fetch recent bookings:", error);
             }
         },
         logout() {

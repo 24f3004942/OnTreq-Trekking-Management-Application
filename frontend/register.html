@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OnTreq | Expeditioner Onboarding</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="static/style.css">
+    <style>
+        .auth-wrapper {
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            background: #121212; /* Removed the Unsplash image link and replaced it with a dark solid color */
+        }
+        
+        .auth-mask {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(8, 9, 10, 0.85); backdrop-filter: blur(8px);
+        }
+        .auth-card {
+            width: 100%; max-width: 800px; position: relative; z-index: 2;
+            background: rgba(17, 18, 22, 0.7) !important; border: 1px solid rgba(255,255,255,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div id="register-app" class="auth-wrapper" v-cloak>
+        <div class="auth-mask"></div>
+        <div class="container d-flex justify-content-center my-5">
+            <div class="glass-card p-5 auth-card shadow-lg">
+                
+                <div class="text-center mb-5">
+                    <h2 class="fw-bolder text-white" style="font-family: 'Playfair Display', serif; font-size: 2.5rem; letter-spacing: 2px;">
+                        Expeditioner <span style="color: var(--ontreq-accent);">Onboarding</span>
+                    </h2>
+                    <p class="text-secondary mt-2">Complete your profile to unlock world-class trekking experiences.</p>
+                </div>
+
+                <div v-if="message" :class="['alert', isError ? 'alert-danger' : 'alert-success', 'py-2', 'small', 'mb-4']">{{ message }}</div>
+
+                <form @submit.prevent="registerUser">
+                    
+                    <h6 class="text-white border-bottom border-secondary pb-2 mb-4 text-uppercase" style="letter-spacing: 1px;">Personal Identity</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label text-secondary small fw-bold">FIRST NAME</label>
+                            <input type="text" class="form-control bg-dark text-white border-secondary shadow-none" v-model="form.first_name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-secondary small fw-bold">LAST NAME</label>
+                            <input type="text" class="form-control bg-dark text-white border-secondary shadow-none" v-model="form.last_name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-secondary small fw-bold">EMAIL ADDRESS</label>
+                            <input type="email" class="form-control bg-dark text-white border-secondary shadow-none" v-model="form.email" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-secondary small fw-bold">PHONE NUMBER</label>
+                            <input type="tel" class="form-control bg-dark text-white border-secondary shadow-none" v-model="form.phone" required>
+                        </div>
+                    </div>
+
+                    <h6 class="text-white border-bottom border-secondary pb-2 mb-4 text-uppercase" style="letter-spacing: 1px;">Safety & Credentials</h6>
+                    <div class="row g-3 mb-5">
+                        <div class="col-md-6">
+                            <label class="form-label text-secondary small fw-bold">EMERGENCY CONTACT PHONE</label>
+                            <input type="tel" class="form-control bg-dark text-white border-secondary shadow-none" v-model="form.emergency_contact" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-secondary small fw-bold">TREKKING EXPERIENCE</label>
+                            <select class="form-select bg-dark text-white border-secondary shadow-none" v-model="form.experience_level">
+                                <option value="Beginner">Beginner (1-2 Treks)</option>
+                                <option value="Moderate">Moderate (3-10 Treks)</option>
+                                <option value="Expert">Expert (10+ Treks / High Altitude)</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label text-secondary small fw-bold">KNOWN MEDICAL CONDITIONS</label>
+                            <input type="text" class="form-control bg-dark text-white border-secondary shadow-none" v-model="form.medical_conditions" placeholder="e.g., Asthma, Altitude Sickness history, or 'None'">
+                        </div>
+                        <div class="col-md-6 mt-4">
+                            <label class="form-label text-secondary small fw-bold">CREATE PASSWORD</label>
+                            <input type="password" class="form-control bg-dark text-white border-secondary shadow-none" v-model="form.password" required minlength="6">
+                        </div>
+                        <div class="col-md-6 mt-4">
+                            <label class="form-label text-secondary small fw-bold">CONFIRM PASSWORD</label>
+                            <input type="password" class="form-control bg-dark text-white border-secondary shadow-none" v-model="form.confirmPassword" required minlength="6">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-brand w-100 py-3 text-uppercase fw-bold" style="letter-spacing: 2px;" :disabled="isLoading">
+                        {{ isLoading ? 'Initializing Profile...' : 'Complete Registration' }}
+                    </button>
+                </form>
+
+                <div class="mt-4 text-center">
+                    <span class="text-secondary small">Already registered? </span>
+                    <a href="index.html" class="text-decoration-none small fw-bold" style="color: var(--ontreq-accent);">Log In</a>
+                    <p class="text-secondary small mt-2 mb-0"><em>Note: Only Users (Trekkers) can register themselves. Trekking Staff are created by Admin.</em></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="register.js"></script>
+</body>
+</html>

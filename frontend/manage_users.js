@@ -13,8 +13,12 @@ createApp({
         // Milestone 3 Requirement: "Search users, staff, or treks"
         filteredUsers() {
             if (!this.searchQuery) return this.users;
-            return this.users.filter(user => 
-                user.email.toLowerCase().includes(this.searchQuery.toLowerCase())
+            const q = this.searchQuery.toLowerCase();
+            return this.users.filter(user =>
+                user.email.toLowerCase().includes(q) ||
+                (user.first_name || '').toLowerCase().includes(q) ||
+                (user.last_name || '').toLowerCase().includes(q) ||
+                String(user.id).includes(q)
             );
         }
     },

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OnTreq | Trekking Management Application</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="static/style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#FF4757">
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg py-3">
+        <div class="container">
+            <a class="navbar-brand fw-bolder fs-3" href="landing.html">On<span style="color: var(--ontreq-accent);">Treq</span></a>
+            <div class="d-flex gap-2">
+                <a href="index.html" class="btn btn-outline-light">Sign In</a>
+                <a href="register.html" class="btn btn-brand">Register as Trekker</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="hero-section" style="min-height: 85vh;">
+        <div class="container">
+            <div class="row justify-content-center align-items-center">
+
+                <div class="col-lg-6 mb-5 mb-lg-0 text-center text-lg-start">
+                    <span class="badge border border-danger text-danger px-3 py-2 mb-3" style="background: rgba(255,71,87,0.08); font-weight: 500;">
+                        Trekking Management Application
+                    </span>
+                    <h1 class="display-3 fw-bolder mb-3 text-white">
+                        Plan, Book &amp; Manage Every Expedition <span style="color: var(--ontreq-accent);">In One Place.</span>
+                    </h1>
+                    <p class="lead text-secondary mb-4">
+                        OnTreq connects Admins, Trek Staff, and Trekkers on a single platform — from route planning and staff assignment to slot booking and trip history, all tracked in real time.
+                    </p>
+                    <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center justify-content-lg-start">
+                        <a href="index.html" class="btn btn-brand btn-lg px-4">
+                            <i class="bi bi-box-arrow-in-right"></i> Sign In
+                        </a>
+                        <a href="register.html" class="btn btn-outline-light btn-lg px-4">
+                            Register as Trekker
+                        </a>
+                    </div>
+                    <p class="text-secondary small mt-3 mb-0">
+                        <em>Only Trekkers can self-register. Trek Staff accounts are created by the Admin.</em>
+                    </p>
+                </div>
+
+                <div class="col-lg-5 col-md-8">
+                    <div class="glass-card p-4 p-md-5">
+                        <h6 class="text-secondary text-uppercase small fw-bold mb-4" style="letter-spacing: 1px;">Live Platform Activity</h6>
+                        <div class="row g-4 text-center">
+                            <div class="col-6">
+                                <h2 class="fw-bold m-0" id="stat-open-treks">0</h2>
+                                <p class="text-secondary small m-0 text-uppercase">Open Expeditions</p>
+                            </div>
+                            <div class="col-6">
+                                <h2 class="fw-bold m-0" id="stat-total-treks">0</h2>
+                                <p class="text-secondary small m-0 text-uppercase">Total Routes</p>
+                            </div>
+                            <div class="col-6">
+                                <h2 class="fw-bold m-0" id="stat-completed-treks">0</h2>
+                                <p class="text-secondary small m-0 text-uppercase">Treks Completed</p>
+                            </div>
+                            <div class="col-6">
+                                <h2 class="fw-bold m-0" id="stat-total-trekkers">0</h2>
+                                <p class="text-secondary small m-0 text-uppercase">Trekkers Onboard</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+
+        fetch('http://127.0.0.1:5000/api/public/stats')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('stat-open-treks').textContent = data.open_treks;
+                document.getElementById('stat-total-treks').textContent = data.total_treks;
+                document.getElementById('stat-completed-treks').textContent = data.completed_treks;
+                document.getElementById('stat-total-trekkers').textContent = data.total_trekkers;
+            })
+            .catch(err => console.error('Could not load public stats:', err));
+    </script>
+</body>
+</html>

@@ -4,9 +4,15 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from models import db, cache, User, StaffProfile, Trek, Booking, TrekReview
 from celery import Celery
+from flask import send_from_directory
 
 def create_app():
-    app = Flask(__name__)
+    # 1. Point Flask to the external 'frontend' folder
+    frontend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'frontend'))
+    
+    # 2. Initialize Flask with the static folder configurations
+    app = Flask(__name__, static_folder=frontend_dir, static_url_path='/')
+    
     CORS(app)
     
     # Configure SQLite Database
@@ -31,11 +37,29 @@ def create_app():
     app.config['CACHE_TYPE'] = 'RedisCache'
     app.config['CACHE_REDIS_URL'] = 'redis://localhost:6379/0'
     app.config['CACHE_DEFAULT_TIMEOUT'] = 300 # Default cache lives for 5 minutes
+    # Fail-soft: if Redis is briefly unreachable, serve the request live
+    # instead of returning a 500 from inside the caching decorator.
+    app.config['CACHE_IGNORE_ERRORS'] = True
     cache.init_app(app)
 
     # --- NEW: CELERY CONFIGURATION ---
     # Tell Celery to use your local Redis server as the message broker
-    
+    # --- UI SERVING ROUTES (MAD-2 Evaluator Setup) ---
+    @app.route('/')
+    def serve_index():
+        """Serves the public landing page as the app's entry point"""
+        return send_from_directory(app.static_folder, 'landing.html')
+
+    @app.route('/<path:path>')
+    def serve_static_files(path):
+        """Serves CSS, JS, and HTML files from the frontend folder"""
+        if os.path.exists(os.path.join(app.static_folder, path)):
+            return send_from_directory(app.static_folder, path)
+        else:
+            # Fallback for unknown paths
+            return send_from_directory(app.static_folder, 'landing.html')
+            
+    # ... your existing blueprint registrations stay below this ...
     
     # Register Blueprints
     from routes.auth import auth_bp
@@ -55,6 +79,9 @@ def create_app():
     
     from routes.user_ops import user_ops_bp
     app.register_blueprint(user_ops_bp, url_prefix='/api/user-ops')
+
+    from routes.public import public_bp
+    app.register_blueprint(public_bp, url_prefix='/api/public')
     
     return app
 
@@ -81,12 +108,6 @@ def make_celery(app):
                 'task': 'jobs.tasks.generate_monthly_report',
                 'schedule': crontab(day_of_month='1', hour=0, minute=0), 
             },
-            
-            # ⚠️ FOR TESTING ONLY: UNCOMMENT THIS TO RUN THE REPORT EVERY 1 MINUTE
-             'test-report-every-minute': {
-                 'task': 'jobs.tasks.generate_monthly_report',
-                 'schedule': crontab(minute='*'), 
-             }
         }
     )
     
@@ -100,6 +121,8 @@ def make_celery(app):
 
 app = create_app()
 celery_app = make_celery(app) # Instantiate the Celery app
+
+import jobs.tasks
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
